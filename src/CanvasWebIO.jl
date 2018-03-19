@@ -2,7 +2,7 @@ module CanvasWebIO
 
 using WebIO, JSExpr
 
-export Canvas, addmovable!
+export Canvas, addmovable!, addstatic!
 
 mutable struct Canvas
     w::Scope
@@ -77,13 +77,13 @@ function (canvas::Canvas)()
     canvas.w(dom"svg:svg[id = canvas, 
         height = $(canvas.size[1]), 
         width = $(canvas.size[2])]"(
-                                    canvas.movables...,
                                     canvas.static...,
+                                    canvas.movables...,
                                     Node(:div, attributes=Dict("id"=>canvas.dragged), ""),
                                     events = canvas_events))
 end
 
-function addmovable!(canvas, svg::WebIO.Node)
+function addmovable!(canvas::Canvas, svg::WebIO.Node)
     attr = svg.props[:attributes]
     if "id" in keys(attr)
         id = attr["id"]
@@ -112,4 +112,7 @@ function addmovable!(canvas, svg::WebIO.Node)
           Node(svg.instanceof, attributes=attr, style=style, events=box_events))
 end
 
+function addstatic!(canvas::Canvas, svg::WebIO.Node)
+    push!(canvas.static, svg)
+end
 end

@@ -3,7 +3,7 @@
 Warning: This package is experimental and buggy. Currently it only (barely) works on firefox.
 
 
-This purpose of this package is to allow the construction of movable SVG objects inside a WebIO Scope, with the objects having their positions accesssible through observables in Julia. 
+The purpose of this package is to allow the construction of movable SVG objects inside a WebIO Scope, with the objects having their positions accesssible through observables in Julia. 
 
 To create a canvas:
 

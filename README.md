@@ -2,7 +2,7 @@
 
 Warning: This package is experimental and buggy.
 
-
+<img src="demo.gif" style="width: 500px;"/>
 The purpose of this package is to allow the construction of movable SVG objects inside a WebIO Scope, with the objects having their positions accesssible through observables in Julia. 
 
 To create a canvas:
@@ -25,6 +25,6 @@ webio_serve(page("/", req -> canvas()))
 
 Accessing position of movable object:
 ```julia
-a = canvas["box"] #access
+a = canvas["box"][] #access
 canvas["box"] = [500,250] #assignment
 ```

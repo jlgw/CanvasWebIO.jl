@@ -14,7 +14,7 @@ canvas = Canvas()
 Adding movable objects using a template node:
 
 ```julia
-box = dom"svg:rect[id=box, height=50, width=50, x=100, y=100]()
+box = dom"svg:rect[id=box, height=50, width=50, x=100, y=100]"()
 addmovable!(canvas, box)
 ```
 

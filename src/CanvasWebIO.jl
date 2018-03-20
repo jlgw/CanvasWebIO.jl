@@ -42,7 +42,7 @@ function Canvas()
 end
 
 function Base.getindex(canvas::Canvas, i)
-    canvas.getter[i]
+    canvas.getter[i][]
 end
 function (canvas::Canvas)()
     canvas_events = Dict()
@@ -242,6 +242,30 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node)
     end
     push!(canvas.movables,
           Node(svg.instanceof, children..., attributes=attr, style=style, events=movable_events))
+end
+
+function setindex_(canvas::Canvas, pos, i)
+    evaljs(canvas.w, js"""
+           selected_obj = document.getElementById($i) 
+           dim = selected_obj.parentElement.getBoundingClientRect()
+           x = $(pos[1])-dim.x
+           y = $(pos[2])-dim.y
+           if(selected_obj.tagName=="rect") 
+               xpos = x-selected_obj.getAttribute("width")/2
+               ypos = y-selected_obj.getAttribute("height")/2
+               selected_obj.setAttribute("x", xpos)
+               selected_obj.setAttribute("y", ypos)
+           if(selected_obj.tagName=="circle") 
+               xpos = x
+               ypos = y
+               selected_obj.setAttribute("cx", xpos)
+               selected_obj.setAttribute("cy", ypos)
+           """)
+end
+           
+function Base.setindex!(canvas::Canvas, val, i)
+    setindex_(canvas::Canvas, val, i)
+    canvas[i][] = val
 end
 
 function addstatic!(canvas::Canvas, svg::WebIO.Node)

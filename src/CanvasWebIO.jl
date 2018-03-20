@@ -46,12 +46,12 @@ end
 function (canvas::Canvas)()
     canvas_events = Dict()
 
-    canvas_events["dragstart"]  = @js function(event) 
-        event.stopPropagation() 
+    canvas_events["dragstart"]  = @js function(event)
+        event.stopPropagation()
         event.preventDefault()
     end
     handler = canvas.handler
-    canvas_events["drop"]  = @js function(event) 
+    canvas_events["drop"]  = @js function(event)
         event.preventDefault()
         event.stopPropagation()
         name = document.getElementById($(canvas.selected)).innerHTML
@@ -78,12 +78,12 @@ function (canvas::Canvas)()
         $handler[] = [name, xpos, ypos]
         document.getElementById($(canvas.selected)).innerHTML = ""
     end
-    canvas_events["dragover"]  = @js function(event) 
+    canvas_events["dragover"]  = @js function(event)
         console.log("dragover")
         event.preventDefault()
-        event.stopPropagation() 
+        event.stopPropagation()
     end
-    canvas_events["click"]  = @js function(event) 
+    canvas_events["click"]  = @js function(event)
         name = document.getElementById($(canvas.selected)).innerHTML
         if(name!="")
             selected_obj = document.getElementById(name)
@@ -110,11 +110,11 @@ function (canvas::Canvas)()
         end
 
         event.preventDefault()
-        event.stopPropagation() 
+        event.stopPropagation()
     end
 
-    canvas.w(dom"svg:svg[id = canvas, 
-        height = $(canvas.size[1]), 
+    canvas.w(dom"svg:svg[id = canvas,
+        height = $(canvas.size[1]),
         width = $(canvas.size[2])]"(
                                     canvas.static...,
                                     canvas.clickables...,
@@ -132,7 +132,7 @@ function addclickable!(canvas::Canvas, svg::WebIO.Node)
     end
     selection = canvas.selection
     clickable_events = Dict()
-    clickable_events["click"]  = @js function(event) 
+    clickable_events["click"]  = @js function(event)
         name = document.getElementById($(canvas.selected)).innerHTML
         if name == this.id
             this.style.stroke = "none"
@@ -168,19 +168,19 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node)
         val
     end
     canvas.getter[id] = pos
-    
+
     handler = canvas.handler
     attr["draggable"] = "true"
     style = Dict(:cursor => "move")
     movable_events = Dict()
-    movable_events["dragstart"]  = @js function(event) 
-        event.stopPropagation() 
+    movable_events["dragstart"]  = @js function(event)
+        event.stopPropagation()
         console.log("dragging", this.id)
         this.style.stroke = "red" #Change this later
         this.style.strokeWidth = 5 #Change this later
         document.getElementById($(canvas.selected)).innerHTML = this.id
     end
-    movable_events["click"]  = @js function(event) 
+    movable_events["click"]  = @js function(event)
         console.log("clicking", this.id)
         name = document.getElementById($(canvas.selected)).innerHTML
         if name == ""

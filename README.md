@@ -1,6 +1,6 @@
 # CanvasWebIO
 
-Warning: This package is experimental and buggy. Currently it only (barely) works on firefox.
+Warning: This package is experimental and buggy.
 
 
 The purpose of this package is to allow the construction of movable SVG objects inside a WebIO Scope, with the objects having their positions accesssible through observables in Julia. 

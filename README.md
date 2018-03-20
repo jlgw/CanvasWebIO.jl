@@ -23,7 +23,8 @@ Serving with Mux, canvas() returns canvas Scope
 webio_serve(page("/", req -> canvas()))
 ```
 
-Accessing position of movable object (currently the position cannot be assigned from the julia side):
+Accessing position of movable object:
 ```julia
-canvas["box"][]
+a = canvas["box"] #access
+canvas["box"] = [500,250] #assignment
 ```

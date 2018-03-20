@@ -16,6 +16,7 @@ mutable struct Canvas
     selection::Observable
 end
 
+global moving = false
 function Canvas(size)
     w = Scope()
     handler = Observable(w, "handler", ["id", 0, 0])
@@ -58,25 +59,51 @@ function (canvas::Canvas)()
         #make this saner with selected as attribute, internal data? who knows
         selected_obj = document.getElementById(name)
         selected_obj.style.stroke = "none"
-        #We perform the section below several times, how to remove duplicates?
-        dim = selected_obj.parentElement.getBoundingClientRect()
-        x = event.pageX-dim.x
-        y = event.pageY-dim.y
-        console.log("dropping", name, "at", x, y)
-        if(selected_obj.tagName=="rect")
-            xpos = x-selected_obj.getAttribute("width")/2
-            ypos = y-selected_obj.getAttribute("height")/2
-            selected_obj.setAttribute("x", xpos)
-            selected_obj.setAttribute("y", ypos)
-        elseif(selected_obj.tagName=="circle")
-            xpos = x
-            ypos = y
-            selected_obj.setAttribute("cx", xpos)
-            selected_obj.setAttribute("cy", ypos)
-        end
+        if selected_obj.getAttribute("draggable")=="true"
+            #We perform the section below several times, how to remove duplicates?
+            dim = selected_obj.parentElement.getBoundingClientRect()
+            x = event.pageX-dim.x
+            y = event.pageY-dim.y
+            console.log("dropping", name, "at", x, y)
+            if(selected_obj.tagName=="rect")
+                xpos = x-selected_obj.getAttribute("width")/2
+                ypos = y-selected_obj.getAttribute("height")/2
+                selected_obj.setAttribute("x", xpos)
+                selected_obj.setAttribute("y", ypos)
+            elseif(selected_obj.tagName=="circle")
+                xpos = x
+                ypos = y
+                selected_obj.setAttribute("cx", xpos)
+                selected_obj.setAttribute("cy", ypos)
+            end
 
-        $handler[] = [name, xpos, ypos]
-        document.getElementById($(canvas.selected)).innerHTML = ""
+            $handler[] = [name, xpos, ypos]
+            document.getElementById($(canvas.selected)).innerHTML = ""
+        end
+    end
+    canvas_events["mousemove"]  = @js function(event)
+        event.preventDefault()
+        event.stopPropagation()
+        name = document.getElementById($(canvas.selected)).innerHTML
+        #make this saner with selected as attribute, internal data? who knows
+        selected_obj = document.getElementById(name)
+        if selected_obj.getAttribute("draggable")=="true"
+            #We perform the section below several times, how to remove duplicates?
+            dim = selected_obj.parentElement.getBoundingClientRect()
+            x = event.pageX-dim.x
+            y = event.pageY-dim.y
+            if(selected_obj.tagName=="rect")
+                xpos = x-selected_obj.getAttribute("width")/2
+                ypos = y-selected_obj.getAttribute("height")/2
+                selected_obj.setAttribute("x", xpos)
+                selected_obj.setAttribute("y", ypos)
+            elseif(selected_obj.tagName=="circle")
+                xpos = x
+                ypos = y
+                selected_obj.setAttribute("cx", xpos)
+                selected_obj.setAttribute("cy", ypos)
+            end
+        end
     end
     canvas_events["dragover"]  = @js function(event)
         console.log("dragover")
@@ -125,6 +152,7 @@ end
 
 function addclickable!(canvas::Canvas, svg::WebIO.Node)
     attr = svg.props[:attributes]
+    children = svg.children
     if "id" in keys(attr)
         id = attr["id"]
     else
@@ -149,11 +177,12 @@ function addclickable!(canvas::Canvas, svg::WebIO.Node)
         end
     end
     push!(canvas.clickables,
-          Node(svg.instanceof, attributes=attr, events=clickable_events))
+          Node(svg.instanceof, children..., attributes=attr, events=clickable_events))
 end
 
 function addmovable!(canvas::Canvas, svg::WebIO.Node)
     attr = svg.props[:attributes]
+    children = svg.children
     if "id" in keys(attr)
         id = attr["id"]
     else
@@ -201,8 +230,7 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node)
                     ypos = y-selected_obj.getAttribute("height")/2
                     selected_obj.setAttribute("x", xpos)
                     selected_obj.setAttribute("y", ypos)
-                elseif(selected_obj.tagName=="circle")
-                    xpos = x
+                elseif(selected_obj.tagName=="circle") xpos = x
                     ypos = y
                     selected_obj.setAttribute("cx", xpos)
                     selected_obj.setAttribute("cy", ypos)
@@ -213,7 +241,7 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node)
         end
     end
     push!(canvas.movables,
-          Node(svg.instanceof, attributes=attr, style=style, events=movable_events))
+          Node(svg.instanceof, children..., attributes=attr, style=style, events=movable_events))
 end
 
 function addstatic!(canvas::Canvas, svg::WebIO.Node)

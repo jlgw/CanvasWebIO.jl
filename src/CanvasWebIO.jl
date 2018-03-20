@@ -29,7 +29,7 @@ function Canvas(size)
     on(handler) do val
         selection[] = val[1]
         try
-            getter[val[1]][] = val[2:3]
+            getter[val[1]][] = Int.(floor.(val[2:3]))
         catch
             println("Failed to assign value $(val[2:3]) to $(val[1])")
         end
@@ -42,7 +42,7 @@ function Canvas()
 end
 
 function Base.getindex(canvas::Canvas, i)
-    canvas.getter[i][]
+    canvas.getter[i]
 end
 function (canvas::Canvas)()
     canvas_events = Dict()

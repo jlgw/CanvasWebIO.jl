@@ -1,4 +1,4 @@
-using CanvasWebIO, WebIO, Mux
+using CanvasWebIO, WebIO, Mux, Blink
 
 try 
     global port += 1 
@@ -17,5 +17,21 @@ addmovable!(canvas, box2)
 addmovable!(canvas, circ1)
 addclickable!(canvas, box3)
 addstatic!(canvas, bg)
+
+on(canvas.selection) do val
+    println("selected $val")
+end
+
+on(canvas["box1"]) do val
+    println("box1 moved to $(val[1]), $(val[2])")
+end
+
+on(canvas["box2"]) do val
+    println("box2 moved to $(val[1]), $(val[2])")
+end
+
+on(canvas["circ1"]) do val
+    println("circ1 moved to $(val[1]), $(val[2])")
+end
 
 webio_serve(page("/", req -> canvas()), port)

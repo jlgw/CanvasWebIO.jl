@@ -50,7 +50,8 @@ function (canvas::Canvas)()
         name = document.getElementById($(canvas.dragged)).innerHTML
         #make this saner with dragged as attribute, internal data? who knows
         dragged_obj = document.getElementById(name)
-        dragged_obj.style.fill="black"
+        dragged_obj.style.stroke = "none"
+        #We perform the section below several times, how to remove duplicates?
         dim = dragged_obj.parentElement.getBoundingClientRect()
         x = event.pageX-dim.x
         y = event.pageY-dim.y
@@ -79,7 +80,7 @@ function (canvas::Canvas)()
         name = document.getElementById($(canvas.dragged)).innerHTML
         if(name!="")
             dragged_obj = document.getElementById(name)
-            dragged_obj.style.fill="black"
+            dragged_obj.style.stroke = "none"
             dim = dragged_obj.parentElement.getBoundingClientRect()
             x = event.pageX-dim.x
             y = event.pageY-dim.y
@@ -129,23 +130,43 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node)
     end
     canvas.getter[id] = pos
     
+    handler = canvas.handler
     attr["draggable"] = "true"
     style = Dict(:cursor => "move")
     box_events = Dict()
     box_events["dragstart"]  = @js function(event) 
         event.stopPropagation() 
         console.log("dragging", this.id)
-        this.style.fill="red" #Change this later
+        this.style.stroke = "red" #Change this later
+        this.style.strokeWidth = 5 #Change this later
         document.getElementById($(canvas.dragged)).innerHTML = this.id
     end
     box_events["click"]  = @js function(event) 
-        event.preventDefault()
         console.log("clicking", this.id)
-        if document.getElementById($(canvas.dragged)).innerHTML == ""
-            this.style.fill="red" #Change this later
+        name = document.getElementById($(canvas.dragged)).innerHTML
+        if name == ""
+            this.style.stroke = "red" #Change this later
+            this.style.strokeWidth = 5 #Change this later
             document.getElementById($(canvas.dragged)).innerHTML = this.id
         else
-            this.style.fill="black" #Change this later
+            dragged_obj = document.getElementById(name)
+            dragged_obj.style.stroke = "none"
+            dim = dragged_obj.parentElement.getBoundingClientRect()
+            x = event.pageX-dim.x
+            y = event.pageY-dim.y
+            console.log("click (drop)", name, "at", x, y)
+            if(dragged_obj.tagName=="rect")
+                xpos = x-dragged_obj.getAttribute("width")/2
+                ypos = y-dragged_obj.getAttribute("height")/2
+                dragged_obj.setAttribute("x", xpos)
+                dragged_obj.setAttribute("y", ypos)
+            elseif(dragged_obj.tagName=="circle")
+                xpos = x
+                ypos = y
+                dragged_obj.setAttribute("cx", xpos)
+                dragged_obj.setAttribute("cy", ypos)
+            end
+            $handler[] = [name, xpos, ypos]
             document.getElementById($(canvas.dragged)).innerHTML = ""
         end
     end

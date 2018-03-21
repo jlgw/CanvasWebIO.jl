@@ -45,12 +45,12 @@ end
 function (canvas::Canvas)()
     canvas_events = Dict()
 
+    handler = canvas.handler
     #Any reason to keep the drag event listeners? Do some tests.
     canvas_events["dragstart"]  = @js function(event)
         event.stopPropagation()
         event.preventDefault()
     end
-    handler = canvas.handler
     canvas_events["drop"]  = @js function(event)
         event.preventDefault()
         event.stopPropagation()
@@ -183,7 +183,7 @@ function addclickable!(canvas::Canvas, svg::WebIO.Node)
 end
 
 """
-function addmovable!(canvas::Canvas, svg::WebIO.Node)
+addmovable!(canvas::Canvas, svg::WebIO.Node)
 
 Adds a movable object to the canvas based on the svg template. If the template has an id, this will be given to the canvas object, and the object will be associated with the id as a string (canvas[id] accesses the associated observable etc). If the template has no id, one will be generated. Note that the stroke property will be overwritten.
 """
@@ -194,6 +194,7 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node)
         id = attr["id"]
     else
         id = WebIO.newid("svg")
+        attr["id"] = id
     end
     if svg.instanceof.tag==:rect
         pos = Observable(canvas.w, id, parse.([attr["x"], attr["y"]]))
@@ -260,19 +261,20 @@ function setindex_(canvas::Canvas, pos, i::String)
     #This pollutes global namespace (with temp vars), we may want to consider a function wrap
     evaljs(canvas.w, js"""
            selected_obj = document.getElementById($i)
-           dim = selected_obj.parentElement.getBoundingClientRect()
-           x = $(pos[1])-dim.x
-           y = $(pos[2])-dim.y
-           if(selected_obj.tagName=="rect")
+           x = $(pos[1])
+           y = $(pos[2])
+           if(selected_obj.tagName=="rect"){
                xpos = x-selected_obj.getAttribute("width")/2
                ypos = y-selected_obj.getAttribute("height")/2
                selected_obj.setAttribute("x", xpos)
                selected_obj.setAttribute("y", ypos)
-           if(selected_obj.tagName=="circle")
+               }
+           if(selected_obj.tagName=="circle"){
                xpos = x
                ypos = y
                selected_obj.setAttribute("cx", xpos)
                selected_obj.setAttribute("cy", ypos)
+               }
            """)
 end
 

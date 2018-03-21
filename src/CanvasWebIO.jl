@@ -1,19 +1,17 @@
 module CanvasWebIO
 
-using WebIO, JSExpr
+using WebIO, JSExpr, Observables
 
 export Canvas, addmovable!, addclickable!, addstatic!
 
 mutable struct Canvas
-    w::Scope
-    size
-    movables::Array
-    clickables::Array
-    static::Array
+    w::WebIO.Scope
+    size::Array{Int64, 1}
+    objects::Array{WebIO.Node, 1}
     getter::Dict
-    selected::String #actually just the field for the selection
-    handler::Observable
-    selection::Observable
+    selected_field::String 
+    handler::Observables.Observable
+    selection::Observables.Observable
 end
 
 global moving = false
@@ -22,7 +20,7 @@ function Canvas(size)
     handler = Observable(w, "handler", ["id", 0, 0])
     selection = Observable(w, "selection", "id")
     getter = Dict()
-    selected = WebIO.newid("selected")
+    selected_field = WebIO.newid("selected")
     on(selection) do val
         val
     end
@@ -34,7 +32,7 @@ function Canvas(size)
             println("Failed to assign value $(val[2:3]) to $(val[1])")
         end
     end
-    Canvas(w, size, [], [], [], getter, selected, handler, selection)
+    Canvas(w, size, Array{WebIO.Node,1}(), getter, selected_field, handler, selection)
 end
 
 function Canvas()
@@ -55,7 +53,7 @@ function (canvas::Canvas)()
     canvas_events["drop"]  = @js function(event)
         event.preventDefault()
         event.stopPropagation()
-        name = document.getElementById($(canvas.selected)).innerHTML
+        name = document.getElementById($(canvas.selected_field)).innerHTML
         #make this saner with selected as attribute, internal data? who knows
         selected_obj = document.getElementById(name)
         selected_obj.style.stroke = "none"
@@ -78,13 +76,13 @@ function (canvas::Canvas)()
             end
 
             $handler[] = [name, xpos, ypos]
-            document.getElementById($(canvas.selected)).innerHTML = ""
+            document.getElementById($(canvas.selected_field)).innerHTML = ""
         end
     end
     canvas_events["mousemove"]  = @js function(event)
         event.preventDefault()
         event.stopPropagation()
-        name = document.getElementById($(canvas.selected)).innerHTML
+        name = document.getElementById($(canvas.selected_field)).innerHTML
         #make this saner with selected as attribute, internal data? who knows
         selected_obj = document.getElementById(name)
         if selected_obj.getAttribute("draggable")=="true"
@@ -111,7 +109,7 @@ function (canvas::Canvas)()
         event.stopPropagation()
     end
     canvas_events["click"]  = @js function(event)
-        name = document.getElementById($(canvas.selected)).innerHTML
+        name = document.getElementById($(canvas.selected_field)).innerHTML
         if(name!="")
             selected_obj = document.getElementById(name)
             if selected_obj.getAttribute("draggable")=="true"
@@ -132,7 +130,7 @@ function (canvas::Canvas)()
                     selected_obj.setAttribute("cy", ypos)
                 end
                 $handler[] = [name, xpos, ypos]
-                document.getElementById($(canvas.selected)).innerHTML = ""
+                document.getElementById($(canvas.selected_field)).innerHTML = ""
             end
         end
 
@@ -143,10 +141,8 @@ function (canvas::Canvas)()
     canvas.w(dom"svg:svg[id = canvas,
         height = $(canvas.size[1]),
         width = $(canvas.size[2])]"(
-                                    canvas.static...,
-                                    canvas.clickables...,
-                                    canvas.movables...,
-                                    Node(:div, attributes=Dict("id"=>canvas.selected), ""),
+                                    canvas.objects...,
+                                    Node(:div, attributes=Dict("id"=>canvas.selected_field), ""),
                                     events = canvas_events))
 end
 
@@ -161,10 +157,10 @@ function addclickable!(canvas::Canvas, svg::WebIO.Node)
     selection = canvas.selection
     clickable_events = Dict()
     clickable_events["click"]  = @js function(event)
-        name = document.getElementById($(canvas.selected)).innerHTML
+        name = document.getElementById($(canvas.selected_field)).innerHTML
         if name == this.id
             this.style.stroke = "none"
-            document.getElementById($(canvas.selected)).innerHTML = ""
+            document.getElementById($(canvas.selected_field)).innerHTML = ""
         else
             if name != ""
                 selected_obj = document.getElementById(name)
@@ -172,11 +168,11 @@ function addclickable!(canvas::Canvas, svg::WebIO.Node)
             end
             this.style.stroke = "green" #Change this later
             this.style.strokeWidth = 2 #Change this later
-            document.getElementById($(canvas.selected)).innerHTML = this.id
+            document.getElementById($(canvas.selected_field)).innerHTML = this.id
             $selection[] = this.id
         end
     end
-    push!(canvas.clickables,
+    push!(canvas.objects,
           Node(svg.instanceof, children..., attributes=attr, events=clickable_events))
 end
 
@@ -207,15 +203,15 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node)
         console.log("dragging", this.id)
         this.style.stroke = "red" #Change this later
         this.style.strokeWidth = 5 #Change this later
-        document.getElementById($(canvas.selected)).innerHTML = this.id
+        document.getElementById($(canvas.selected_field)).innerHTML = this.id
     end
     movable_events["click"]  = @js function(event)
         console.log("clicking", this.id)
-        name = document.getElementById($(canvas.selected)).innerHTML
+        name = document.getElementById($(canvas.selected_field)).innerHTML
         if name == ""
             this.style.stroke = "red" #Change this later
             this.style.strokeWidth = 5 #Change this later
-            document.getElementById($(canvas.selected)).innerHTML = this.id
+            document.getElementById($(canvas.selected_field)).innerHTML = this.id
         else
             selected_obj = document.getElementById(name)
             selected_obj.style.stroke = "none"
@@ -237,10 +233,10 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node)
                 end
                 $handler[] = [name, xpos, ypos]
             end
-            document.getElementById($(canvas.selected)).innerHTML = ""
+            document.getElementById($(canvas.selected_field)).innerHTML = ""
         end
     end
-    push!(canvas.movables,
+    push!(canvas.objects,
           Node(svg.instanceof, children..., attributes=attr, style=style, events=movable_events))
 end
 
@@ -269,6 +265,6 @@ function Base.setindex!(canvas::Canvas, val, i)
 end
 
 function addstatic!(canvas::Canvas, svg::WebIO.Node)
-    push!(canvas.static, svg)
+    push!(canvas.objects, svg)
 end
 end

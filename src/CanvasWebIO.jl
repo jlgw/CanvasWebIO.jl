@@ -13,9 +13,10 @@ mutable struct Canvas
     selected_field::String
     handler::Observables.Observable
     selection::Observables.Observable
+    synced::Bool # synced=true => julia listeners called on mousemove, not just drop
 end
 
-function Canvas(size)
+function Canvas(size::Array{Int64,1}, synced=false)
     w = Scope()
     handler = Observable(w, "handler", ["id", 0, 0])
     selection = Observable(w, "selection", "id")
@@ -32,11 +33,15 @@ function Canvas(size)
             println("Failed to assign value $(val[2:3]) to $(val[1])")
         end
     end
-    Canvas(w, size, Array{WebIO.Node,1}(), getter, selected_field, handler, selection)
+    Canvas(w, size, Array{WebIO.Node,1}(), getter, selected_field, handler, selection, synced)
 end
 
 function Canvas()
     Canvas([800,800])
+end
+
+function Canvas(synced::Bool)
+    Canvas([800,800], synced)
 end
 
 function Base.getindex(canvas::Canvas, i)
@@ -80,6 +85,7 @@ function (canvas::Canvas)()
             document.getElementById($(canvas.selected_field)).innerHTML = ""
         end
     end
+    synced = canvas.synced
     canvas_events["mousemove"]  = @js function(event)
         event.preventDefault()
         event.stopPropagation()
@@ -101,6 +107,9 @@ function (canvas::Canvas)()
                 ypos = y
                 selected_obj.setAttribute("cx", xpos)
                 selected_obj.setAttribute("cy", ypos)
+            end
+            if($synced)
+                $handler[] = [name, xpos, ypos]
             end
         end
     end

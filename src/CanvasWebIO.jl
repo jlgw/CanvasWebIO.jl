@@ -4,17 +4,17 @@ using WebIO, JSExpr, Observables
 
 export Canvas, addmovable!, addclickable!, addstatic!
 
+
 mutable struct Canvas
     w::WebIO.Scope
     size::Array{Int64, 1}
     objects::Array{WebIO.Node, 1}
     getter::Dict
-    selected_field::String 
+    selected_field::String
     handler::Observables.Observable
     selection::Observables.Observable
 end
 
-global moving = false
 function Canvas(size)
     w = Scope()
     handler = Observable(w, "handler", ["id", 0, 0])
@@ -45,6 +45,7 @@ end
 function (canvas::Canvas)()
     canvas_events = Dict()
 
+    #Any reason to keep the drag event listeners? Do some tests.
     canvas_events["dragstart"]  = @js function(event)
         event.stopPropagation()
         event.preventDefault()
@@ -54,7 +55,7 @@ function (canvas::Canvas)()
         event.preventDefault()
         event.stopPropagation()
         name = document.getElementById($(canvas.selected_field)).innerHTML
-        #make this saner with selected as attribute, internal data? who knows
+        #make this saner with selected as attribute, internal data, metadata? who knows
         selected_obj = document.getElementById(name)
         selected_obj.style.stroke = "none"
         if selected_obj.getAttribute("draggable")=="true"
@@ -146,6 +147,11 @@ function (canvas::Canvas)()
                                     events = canvas_events))
 end
 
+"""
+addclickable!(canvas::Canvas, svg::WebIO.Node)
+
+Adds a clickable (as in, can be clicked but not moved) object to the canvas based on the svg template. If the template has an id, this will be given to the canvas object, and the object will be associated with the id as a string (canvas[id] accesses the associated observable etc). If the template has no id, one will be generated. Note that the stroke property will be overwritten.
+"""
 function addclickable!(canvas::Canvas, svg::WebIO.Node)
     attr = svg.props[:attributes]
     children = svg.children
@@ -176,6 +182,11 @@ function addclickable!(canvas::Canvas, svg::WebIO.Node)
           Node(svg.instanceof, children..., attributes=attr, events=clickable_events))
 end
 
+"""
+function addmovable!(canvas::Canvas, svg::WebIO.Node)
+
+Adds a movable object to the canvas based on the svg template. If the template has an id, this will be given to the canvas object, and the object will be associated with the id as a string (canvas[id] accesses the associated observable etc). If the template has no id, one will be generated. Note that the stroke property will be overwritten.
+"""
 function addmovable!(canvas::Canvas, svg::WebIO.Node)
     attr = svg.props[:attributes]
     children = svg.children
@@ -202,7 +213,7 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node)
         event.stopPropagation()
         console.log("dragging", this.id)
         this.style.stroke = "red" #Change this later
-        this.style.strokeWidth = 5 #Change this later
+        this.style.strokeWidth = 2 #Change this later
         document.getElementById($(canvas.selected_field)).innerHTML = this.id
     end
     movable_events["click"]  = @js function(event)
@@ -210,7 +221,7 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node)
         name = document.getElementById($(canvas.selected_field)).innerHTML
         if name == ""
             this.style.stroke = "red" #Change this later
-            this.style.strokeWidth = 5 #Change this later
+            this.style.strokeWidth = 2 #Change this later
             document.getElementById($(canvas.selected_field)).innerHTML = this.id
         else
             selected_obj = document.getElementById(name)
@@ -240,31 +251,43 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node)
           Node(svg.instanceof, children..., attributes=attr, style=style, events=movable_events))
 end
 
-function setindex_(canvas::Canvas, pos, i)
+"""
+setindex_(canvas::Canvas, pos, i::String)
+
+Sets the position of the object i to pos on the javascript side.
+"""
+function setindex_(canvas::Canvas, pos, i::String)
+    #This pollutes global namespace (with temp vars), we may want to consider a function wrap
     evaljs(canvas.w, js"""
-           selected_obj = document.getElementById($i) 
+           selected_obj = document.getElementById($i)
            dim = selected_obj.parentElement.getBoundingClientRect()
            x = $(pos[1])-dim.x
            y = $(pos[2])-dim.y
-           if(selected_obj.tagName=="rect") 
+           if(selected_obj.tagName=="rect")
                xpos = x-selected_obj.getAttribute("width")/2
                ypos = y-selected_obj.getAttribute("height")/2
                selected_obj.setAttribute("x", xpos)
                selected_obj.setAttribute("y", ypos)
-           if(selected_obj.tagName=="circle") 
+           if(selected_obj.tagName=="circle")
                xpos = x
                ypos = y
                selected_obj.setAttribute("cx", xpos)
                selected_obj.setAttribute("cy", ypos)
            """)
 end
-           
-function Base.setindex!(canvas::Canvas, val, i)
+
+"""
+addstatic!(canvas::Canvas, svg::WebIO.Node)
+
+Adds the svg object directly to the canvas.
+"""
+function addstatic!(canvas::Canvas, svg::WebIO.Node)
+    push!(canvas.objects, svg)
+end
+
+function Base.setindex!(canvas::Canvas, val, i::String)
     setindex_(canvas::Canvas, val, i)
     canvas[i][] = val
 end
 
-function addstatic!(canvas::Canvas, svg::WebIO.Node)
-    push!(canvas.objects, svg)
-end
 end

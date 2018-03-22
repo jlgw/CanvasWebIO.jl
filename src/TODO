@@ -1,0 +1,7 @@
+- Dragging doesn't work properly. It would be better if dragging was removed and mousedown was used instead, but then a method for differentiating between mousedown and clicks would be necessary. It would be nice not having a timer based approach.
+
+- We cannot add objects after the Scope has been constructed. Changing the DOM of the scope doesn't change it on the javascript side of course. To add objects on the js side, we would need to add them manually through a js""" call.
+
+- It would be convenient to have a locking mechanism for the x and y axes respectively. This is a quite common UI/graphics construct. It shouldn't be too hard to implement, the easiest approach seems to be adding a property to the object and having the setp function respect that.
+
+- Only circles and rectangles work right now. It's trivial to add more objects as needed, but a general solution would be preferable.

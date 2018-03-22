@@ -93,7 +93,7 @@ function (canvas::Canvas)()
 
         @var pos = setp(event,name)
         if pos[0] #is dragged
-            $handler[] = [name, xpos, ypos]
+            $handler[] = [name, pos[1], pos[2]]
             document.getElementById($(canvas.id)).setAttribute("data-selected", "")
         end
     end
@@ -168,7 +168,6 @@ function addclickable!(canvas::Canvas, svg::WebIO.Node)
     push!(canvas.objects,
           Node(svg.instanceof, children..., attributes=attr, events=clickable_events))
 end
-
 """
 addmovable!(canvas::Canvas, svg::WebIO.Node)
 

@@ -5,3 +5,5 @@
 - Only circles and rectangles work right now. It's trivial to add more objects as needed, but a general solution would be preferable.
 
 - Dragging should work on touch devices. Right now, only clicking works which makes it less interactive. Simply setting events["touchstart"] = events["mousedown"] etc doesn't work since they override the browser defaults (zooming, moving) which makes for a bad user experience. Something other than event.page must be used, too.
+
+- It should work in Blink, but it doesn't. The event.page variables seem to be undefined in electron(?)

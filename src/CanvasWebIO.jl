@@ -4,7 +4,6 @@ using WebIO, JSExpr, Observables
 
 export Canvas, addmovable!, addclickable!, addstatic!
 
-
 mutable struct Canvas
     w::WebIO.Scope
     size::Array{Int64, 1}
@@ -53,7 +52,7 @@ function (canvas::Canvas)()
     # js function setp sets the position of the object named name to the position of the mouse
     # returns the [draggable, xpos, ypos] where draggable is whether the object was movable,
     # and xpos,ypos the new position of the object
-    evaljs(canvas.w, js""" setp = function(event, name){
+    @async evaljs(canvas.w, js""" setp = function(event, name){
         var selected_obj = document.getElementById(name)
         var draggable = (selected_obj.getAttribute("draggable")=="true")
         if(draggable){
@@ -79,25 +78,8 @@ function (canvas::Canvas)()
     canvas_events = Dict()
 
     handler = canvas.handler
-    #Any reason to keep the drag event listeners? Do some tests.
-    canvas_events["dragstart"]  = @js function(event)
-        event.stopPropagation()
-        event.preventDefault()
-    end
-    canvas_events["drop"]  = @js function(event)
-        event.preventDefault()
-        event.stopPropagation()
-        @var name = document.getElementById($(canvas.id)).getAttribute("data-selected")
-        selected_obj = document.getElementById(name)
-        selected_obj.style.stroke = "none"
+    synced  = canvas.synced
 
-        @var pos = setp(event,name)
-        if pos[0] #is dragged
-            $handler[] = [name, pos[1], pos[2]]
-            document.getElementById($(canvas.id)).setAttribute("data-selected", "")
-        end
-    end
-    synced = canvas.synced
     canvas_events["mousemove"]  = @js function(event)
         event.preventDefault()
         event.stopPropagation()
@@ -107,29 +89,31 @@ function (canvas::Canvas)()
             pos = setp(event, name)
             if($synced && pos[0]) #is dragged
                 $handler[] = [name, pos[1], pos[2]]
+                document.getElementById($(canvas.id)).setAttribute("is-dragged", true)
             end
         end
     end
-    canvas_events["dragover"]  = @js function(event)
-        console.log("dragover")
+
+    canvas_events["mouseup"] = @js function(event)
         event.preventDefault()
         event.stopPropagation()
-    end
-    canvas_events["click"]  = @js function(event)
-        event.preventDefault()
-        event.stopPropagation()
+        console.log("canvas click")
         @var name = document.getElementById($(canvas.id)).getAttribute("data-selected")
         @var pos = setp(event, name)
-        $handler[] = [name, pos[1], pos[2]]
-        document.getElementById(name).style.stroke = "none"
-        document.getElementById($(canvas.id)).setAttribute("data-selected", "")
+        if document.getElementById($(canvas.id)).getAttribute("is-dragged")=="true"
+            $handler[] = [name, pos[1], pos[2]]
+            document.getElementById(name).style.stroke = "none"
+            document.getElementById($(canvas.id)).setAttribute("data-selected", "")
+            document.getElementById($(canvas.id)).setAttribute("is-dragged", false)
+        end
     end
 
     canvas.w(dom"svg:svg[id = $(canvas.id),
         height = $(canvas.size[1]),
         width = $(canvas.size[2])]"(
                                     canvas.objects...,
-                                    attributes = Dict("data-selected" => ""),
+                                    attributes = Dict("data-selected" => "",
+                                                     "is-dragged" => false),
                                     events = canvas_events))
 end
 
@@ -202,15 +186,9 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node)
     style[:cursor] = "move"
     movable_events = Dict()
 
-    movable_events["dragstart"]  = @js function(event)
+    movable_events["mousedown"]  = @js function(event)
         event.stopPropagation()
-        console.log("dragging", this.id)
-        this.style.stroke = "red" #Change this later
-        this.style.strokeWidth = 2 #Change this later
-        document.getElementById($(canvas.id)).setAttribute("data-selected", this.id)
-    end
-
-    movable_events["click"]  = @js function(event)
+        event.preventDefault()
         console.log("clicking", this.id)
         @var name = document.getElementById($(canvas.id)).getAttribute("data-selected")
         @var pos
@@ -226,6 +204,7 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node)
                 $handler[] = [name, pos[1], pos[2]]
             end
             document.getElementById($(canvas.id)).setAttribute("data-selected", "")
+            document.getElementById($(canvas.id)).setAttribute("is-dragged", false)
         end
     end
     push!(canvas.objects,

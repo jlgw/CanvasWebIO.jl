@@ -54,7 +54,7 @@ function (canvas::Canvas)()
     # and xpos,ypos the new position of the object
     #
     # clean this up
-    @async evaljs(canvas.w, js""" setp = function(event, name){
+    @async (sleep(1.0); evaljs(canvas.w, js""" setp = function(event, name){
         var selected_obj = document.getElementById(name)
         var draggable = (selected_obj.getAttribute("draggable")=="true")
         if(draggable){
@@ -95,7 +95,7 @@ function (canvas::Canvas)()
                 }
             }
         }
-        return [draggable, xpos, ypos]}""")
+        return [draggable, xpos, ypos]}"""))
 
     canvas_events = Dict()
 
@@ -121,12 +121,15 @@ function (canvas::Canvas)()
         event.stopPropagation()
         console.log("canvas click")
         @var name = document.getElementById($(canvas.id)).getAttribute("data-selected")
-        @var pos = setp(event, name)
-        if document.getElementById($(canvas.id)).getAttribute("is-dragged")=="true"
-            $handler[] = [name, pos[1], pos[2]]
-            document.getElementById(name).style.stroke = "none"
-            document.getElementById($(canvas.id)).setAttribute("data-selected", "")
-            document.getElementById($(canvas.id)).setAttribute("is-dragged", false)
+        @var pos
+        if name!=""
+            pos = setp(event, name)
+            if document.getElementById($(canvas.id)).getAttribute("is-dragged")=="true"
+                $handler[] = [name, pos[1], pos[2]]
+                document.getElementById(name).style.stroke = "none"
+                document.getElementById($(canvas.id)).setAttribute("data-selected", "")
+                document.getElementById($(canvas.id)).setAttribute("is-dragged", false)
+            end
         end
     end
 

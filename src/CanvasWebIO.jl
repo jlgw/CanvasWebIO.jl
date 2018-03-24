@@ -176,9 +176,8 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node)
     elseif svg.instanceof.tag==:circle
         pos = Observable(canvas.w, id, parse.([attr["cx"], attr["cy"]]))
     end
-    on(pos) do val #This ensures it's updated from the js side
-        val
-    end
+
+    push!(pos.listeners, (x)->(x))
     canvas.getter[id] = pos
 
     handler = canvas.handler

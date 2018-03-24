@@ -52,6 +52,8 @@ function (canvas::Canvas)()
     # js function setp sets the position of the object named name to the position of the mouse
     # returns the [draggable, xpos, ypos] where draggable is whether the object was movable,
     # and xpos,ypos the new position of the object
+    #
+    # clean this up
     @async evaljs(canvas.w, js""" setp = function(event, name){
         var selected_obj = document.getElementById(name)
         var draggable = (selected_obj.getAttribute("draggable")=="true")
@@ -63,14 +65,34 @@ function (canvas::Canvas)()
             if(selected_obj.tagName=="rect"){
                 xpos = x-selected_obj.getAttribute("width")/2
                 ypos = y-selected_obj.getAttribute("height")/2
-                selected_obj.setAttribute("x", xpos)
-                selected_obj.setAttribute("y", ypos)
+                if(selected_obj.getAttribute("data-lock")!="x"){
+                    selected_obj.setAttribute("x", xpos)
+                }
+                else{
+                    xpos = parseInt(selected_obj.getAttribute("x"))
+                }
+                if(selected_obj.getAttribute("data-lock")!="y"){
+                    selected_obj.setAttribute("y", ypos)
+                }
+                else{
+                    ypos = parseInt(selected_obj.getAttribute("y"))
+                }
             }
             if(selected_obj.tagName=="circle"){
                 xpos = x
                 ypos = y
-                selected_obj.setAttribute("cx", xpos)
-                selected_obj.setAttribute("cy", ypos)
+                if(selected_obj.getAttribute("data-lock")!="x"){
+                    selected_obj.setAttribute("cx", xpos)
+                }
+                else{
+                    xpos = parseInt(selected_obj.getAttribute("cx"))
+                }
+                if(selected_obj.getAttribute("data-lock")!="y"){
+                    selected_obj.setAttribute("cy", ypos)
+                }
+                else{
+                    ypos = parseInt(selected_obj.getAttribute("cy"))
+                }
             }
         }
         return [draggable, xpos, ypos]}""")
@@ -153,11 +175,13 @@ function addclickable!(canvas::Canvas, svg::WebIO.Node)
           Node(svg.instanceof, children..., attributes=attr, events=clickable_events))
 end
 """
-addmovable!(canvas::Canvas, svg::WebIO.Node)
+addmovable!(canvas::Canvas, svg::WebIO.Node, lock=" ")
 
 Adds a movable object to the canvas based on the svg template. If the template has an id, this will be given to the canvas object, and the object will be associated with the id as a string (canvas[id] accesses the associated observable etc). If the template has no id, one will be generated. Note that the stroke property will be overwritten.
+
+The optional lock argument allows locking of an axis. Setting lock="x" will lock the movable's x value, so it can only be moved up and down. Similarly, lock="y" will only permit movements to the left and right.
 """
-function addmovable!(canvas::Canvas, svg::WebIO.Node)
+function addmovable!(canvas::Canvas, svg::WebIO.Node, lock=" ")
     attr = svg.props[:attributes]
     if :style in keys(svg.props)
         style = svg.props[:style]
@@ -171,6 +195,7 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node)
         id = WebIO.newid("svg")
         attr["id"] = id
     end
+    attr["data-lock"] = lock
     if svg.instanceof.tag==:rect
         pos = Observable(canvas.w, id, parse.([attr["x"], attr["y"]]))
     elseif svg.instanceof.tag==:circle

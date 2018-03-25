@@ -109,9 +109,11 @@ function (canvas::Canvas)()
         @var pos
         if name!=""
             pos = setp(event, name)
-            if($synced && pos[0]) #is dragged
-                $handler[] = [name, pos[1], pos[2]]
+            if(pos[0]) #is dragged
                 document.getElementById($(canvas.id)).setAttribute("is-dragged", true)
+                if($synced)
+                    $handler[] = [name, pos[1], pos[2]]
+                end
             end
         end
     end

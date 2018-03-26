@@ -8,7 +8,7 @@ The purpose of this package is to allow the construction of movable SVG objects 
 ## Installation
 Install [WebIO](https://github.com/JuliaGizmos/WebIO.jl) and [JSExpr](https://github.com/JuliaGizmos/JSExpr.jl). Then run
 ```julia
-Pkg.clone(https://github.com/lancebeet/CanvasWebIO.jl)
+Pkg.clone("https://github.com/lancebeet/CanvasWebIO.jl")
 ```
 in the REPL.
 

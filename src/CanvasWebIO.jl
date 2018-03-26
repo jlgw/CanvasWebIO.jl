@@ -99,7 +99,6 @@ function (canvas::Canvas)()
                 xpos = x-selected_obj.getBoundingClientRect().width/2
                 ypos = y-selected_obj.getBoundingClientRect().height/2
                 var trfm = parse(selected_obj.getAttribute("transform"))
-                console.log(trfm)
                 if(selected_obj.getAttribute("data-lock")!="x"){
                     trfm["translate"][0] = xpos
                 }
@@ -124,7 +123,7 @@ function (canvas::Canvas)()
             }
             return b;
         }
-        function mk (a){
+        mk = function (a){
             return (Object.keys(a).map(n => n + "("+ a[n].join(",") + ")")).join(" ")
         }
             """))
@@ -306,7 +305,26 @@ function setindex_(canvas::Canvas, pos, i::String)
                    ypos = y
                    selected_obj.setAttribute("cx", xpos)
                    selected_obj.setAttribute("cy", ypos)
+
                }
+               if(selected_obj.tagName=="g"){
+                   xpos = x-selected_obj.getBoundingClientRect().width/2
+                   ypos = y-selected_obj.getBoundingClientRect().height/2
+                   var trfm = parse(selected_obj.getAttribute("transform"))
+                   if(selected_obj.getAttribute("data-lock")!="x"){
+                       trfm["translate"][0] = xpos
+                   }
+                   else{
+                       xpos = trfm["translate"][0]
+                   }
+                   if(selected_obj.getAttribute("data-lock")!="y"){
+                       trfm["translate"][1] = ypos
+                   }
+                   else{
+                       ypos = trfm["translate"][1]
+                   }
+                   selected_obj.setAttribute("transform", mk(trfm))
+                   }
                })()"""
               )
 end

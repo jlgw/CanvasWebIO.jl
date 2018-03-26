@@ -1,9 +1,5 @@
 - We cannot add objects after the Scope has been constructed. Changing the DOM of the scope doesn't change it on the javascript side of course. To add objects on the js side, we would need to add them manually through a js""" call.
 
-- Only circles and rectangles work right now. It's trivial to add more objects as needed, but a general solution would be preferable. One solution is wrapping in a <g> tag (unless the template is already such), then setting the center through getBoundingClientRect.
-
 - Dragging should work on touch devices. Right now, only clicking works which makes it less interactive. Simply setting events["touchstart"] = events["mousedown"] etc doesn't work since they override the browser defaults (zooming, moving) which makes for a bad user experience. Something other than event.page must be used, too.
 
 - It should work in Blink, but it doesn't. The event.page variables seem to be undefined in electron(?)
-
-- When moving with the mouse, we change the center position. When moving from the julia side, we change the start position (upper left corner). This is confusing, and a better solution would be preferable.

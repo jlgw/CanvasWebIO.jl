@@ -53,6 +53,7 @@ function (canvas::Canvas)()
     # returns the [draggable, xpos, ypos] where draggable is whether the object was movable,
     # and xpos,ypos the new position of the object
     #
+    # Transform parser from https://stackoverflow.com/a/17838403
     # clean this up
     @async (sleep(1.0); evaljs(canvas.w, js""" setp = function(event, name){
         var selected_obj = document.getElementById(name)
@@ -94,8 +95,39 @@ function (canvas::Canvas)()
                     ypos = parseInt(selected_obj.getAttribute("cy"))
                 }
             }
+            if(selected_obj.tagName=="g"){
+                xpos = x-selected_obj.getBoundingClientRect().width/2
+                ypos = y-selected_obj.getBoundingClientRect().height/2
+                var trfm = parse(selected_obj.getAttribute("transform"))
+                console.log(trfm)
+                if(selected_obj.getAttribute("data-lock")!="x"){
+                    trfm["translate"][0] = xpos
+                }
+                else{
+                    xpos = trfm["translate"][0]
+                }
+                if(selected_obj.getAttribute("data-lock")!="y"){
+                    trfm["translate"][1] = ypos
+                }
+                else{
+                    ypos = trfm["translate"][1]
+                }
+                selected_obj.setAttribute("transform", mk(trfm))
+            }
         }
-        return [draggable, xpos, ypos]}"""))
+        return [draggable, xpos, ypos]};
+        parse = function (a){
+            var b={};
+            for (var i in a = a.match(/(\w+\((\-?\d+\.?\d*e?\-?\d*,?)+\))+/g)){
+                var c = a[i].match(/[\w\.\-]+/g);
+                b[c.shift()] = c;
+            }
+            return b;
+        }
+        function mk (a){
+            return (Object.keys(a).map(n => n + "("+ a[n].join(",") + ")")).join(" ")
+        }
+            """))
 
     canvas_events = Dict()
 
@@ -205,6 +237,8 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node, lock=" ")
         pos = Observable(canvas.w, id, parse.([attr["x"], attr["y"]]))
     elseif svg.instanceof.tag==:circle
         pos = Observable(canvas.w, id, parse.([attr["cx"], attr["cy"]]))
+    elseif svg.instanceof.tag==:g
+        pos = Observable(canvas.w, id, [50.0,50.0]) #change
     end
 
     push!(pos.listeners, (x)->(x))
@@ -241,6 +275,15 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node, lock=" ")
 end
 
 """
+addstatic!(canvas::Canvas, svg::WebIO.Node)
+
+Adds the svg object directly to the canvas.
+"""
+function addstatic!(canvas::Canvas, svg::WebIO.Node)
+    push!(canvas.objects, svg)
+end
+
+"""
 setindex_(canvas::Canvas, pos, i::String)
 
 Sets the position of the object i to pos on the javascript side.
@@ -266,15 +309,6 @@ function setindex_(canvas::Canvas, pos, i::String)
                }
                })()"""
               )
-end
-
-"""
-addstatic!(canvas::Canvas, svg::WebIO.Node)
-
-Adds the svg object directly to the canvas.
-"""
-function addstatic!(canvas::Canvas, svg::WebIO.Node)
-    push!(canvas.objects, svg)
 end
 
 function Base.setindex!(canvas::Canvas, val, i::String)

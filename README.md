@@ -2,6 +2,7 @@
 
 Warning: This package is experimental and buggy.
 
+
 <img src="demo.gif" style="width: 500px;"/>
 The purpose of this package is to allow the construction of movable SVG objects inside a WebIO Scope, with the objects having their positions accesssible through observables in Julia. 
 
@@ -39,3 +40,5 @@ canvas["box"] = [500,250] #assignment
 ```
 
 [More examples](https://github.com/lancebeet/julia-scripts)
+
+*Note: Despite the name, the Canvas struct has nothing to do with an HTML canvas, but generates an SVG object.*

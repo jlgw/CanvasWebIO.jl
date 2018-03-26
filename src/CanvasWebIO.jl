@@ -63,38 +63,6 @@ function (canvas::Canvas)()
             var x = event.pageX-dim.x
             var y = event.pageY-dim.y
             var xpos, ypos
-            if(selected_obj.tagName=="rect"){
-                xpos = x-selected_obj.getAttribute("width")/2
-                ypos = y-selected_obj.getAttribute("height")/2
-                if(selected_obj.getAttribute("data-lock")!="x"){
-                    selected_obj.setAttribute("x", xpos)
-                }
-                else{
-                    xpos = parseInt(selected_obj.getAttribute("x"))
-                }
-                if(selected_obj.getAttribute("data-lock")!="y"){
-                    selected_obj.setAttribute("y", ypos)
-                }
-                else{
-                    ypos = parseInt(selected_obj.getAttribute("y"))
-                }
-            }
-            if(selected_obj.tagName=="circle"){
-                xpos = x
-                ypos = y
-                if(selected_obj.getAttribute("data-lock")!="x"){
-                    selected_obj.setAttribute("cx", xpos)
-                }
-                else{
-                    xpos = parseInt(selected_obj.getAttribute("cx"))
-                }
-                if(selected_obj.getAttribute("data-lock")!="y"){
-                    selected_obj.setAttribute("cy", ypos)
-                }
-                else{
-                    ypos = parseInt(selected_obj.getAttribute("cy"))
-                }
-            }
             if(selected_obj.tagName=="g"){
                 xpos = x
                 ypos = y
@@ -254,18 +222,17 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node, lock=" ")
         attr["id"] = id
     end
     attr["data-lock"] = lock
-    if svg.instanceof.tag==:rect
-        pos = Observable(canvas.w, id, parse.([attr["x"], attr["y"]]))
-    elseif svg.instanceof.tag==:circle
-        pos = Observable(canvas.w, id, parse.([attr["cx"], attr["cy"]]))
-    elseif svg.instanceof.tag==:g
+    if svg.instanceof.tag==:g
+        coo = [0.0, 0.0]
         try
-            pos = Observable(canvas.w, id, parse.(Float64, match(r"translate\((.*?),(.*?)\)",
-                                                                 attr["transform"]).captures))
+            coo .= parse.(Float64, match(r"translate\((.*?),(.*?)\)",
+                                         attr["transform"]).captures)
         catch
             println("Failed to get position of $id, setting default")
-            pos = Observable(canvas.w, id, [0.0, 0.0])
         end
+        pos = Observable(canvas.w, id, coo)
+    else
+        error("Only <g> objects allowed")
     end
 
     push!(pos.listeners, (x)->(x))

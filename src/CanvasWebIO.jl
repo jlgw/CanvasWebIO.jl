@@ -96,8 +96,8 @@ function (canvas::Canvas)()
                 }
             }
             if(selected_obj.tagName=="g"){
-                xpos = x-selected_obj.getBoundingClientRect().width/2
-                ypos = y-selected_obj.getBoundingClientRect().height/2
+                xpos = x
+                ypos = y
                 var trfm = parse(selected_obj.getAttribute("transform"))
                 if(selected_obj.getAttribute("data-lock")!="x"){
                     trfm["translate"][0] = xpos
@@ -143,7 +143,7 @@ function (canvas::Canvas)()
             if(pos[0]) #is dragged
                 document.getElementById($(canvas.id)).setAttribute("is-dragged", true)
                 if($synced)
-                    $handler[] = [name, pos[1], pos[2]]
+                    $handler[] = [name, Math.round(pos[1]), Math.round(pos[2])]
                 end
             end
         end
@@ -219,6 +219,28 @@ The optional lock argument allows locking of an axis. Setting lock="x" will lock
 """
 function addmovable!(canvas::Canvas, svg::WebIO.Node, lock=" ")
     attr = svg.props[:attributes]
+    if svg.instanceof.tag!=:g
+        newattr = Dict()
+        if "id" in keys(attr)
+            newattr["id"] = attr["id"]
+        else
+            newattr["id"] = WebIO.newid("svg")
+        end
+        attr["id"] = WebIO.newid("subsvg")
+        if haskey(attr, "x") && haskey(attr, "y") #Rectangle etc
+            newattr["transform"] = "translate($(attr["x"]),$(attr["y"]))"
+            attr["x"] = "$(-parse(attr["width"])/2)"
+            attr["y"] = "$(-parse(attr["height"])/2)"
+        elseif haskey(attr, "cx") && haskey(attr, "cy") #Circle
+            newattr["transform"] = "translate($(attr["cx"]),$(attr["cy"]))"
+            attr["cx"] = "0.0"
+            attr["cy"] = "0.0"
+        else
+            newattr["transform"] = "translate($(attr["cx"]),$(attr["cy"]))" #undefined object
+        end
+        addmovable!(canvas, dom"svg:g"(svg, attributes=newattr))
+        return
+    end
     if :style in keys(svg.props)
         style = svg.props[:style]
     else
@@ -237,7 +259,13 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node, lock=" ")
     elseif svg.instanceof.tag==:circle
         pos = Observable(canvas.w, id, parse.([attr["cx"], attr["cy"]]))
     elseif svg.instanceof.tag==:g
-        pos = Observable(canvas.w, id, [50.0,50.0]) #change
+        try
+            pos = Observable(canvas.w, id, parse.(Float64, match(r"translate\((.*?),(.*?)\)",
+                                                                 attr["transform"]).captures))
+        catch
+            println("Failed to get position of $id, setting default")
+            pos = Observable(canvas.w, id, [0.0, 0.0])
+        end
     end
 
     push!(pos.listeners, (x)->(x))
@@ -308,8 +336,8 @@ function setindex_(canvas::Canvas, pos, i::String)
 
                }
                if(selected_obj.tagName=="g"){
-                   xpos = x-selected_obj.getBoundingClientRect().width/2
-                   ypos = y-selected_obj.getBoundingClientRect().height/2
+                   xpos = x
+                   ypos = y
                    var trfm = parse(selected_obj.getAttribute("transform"))
                    if(selected_obj.getAttribute("data-lock")!="x"){
                        trfm["translate"][0] = xpos

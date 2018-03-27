@@ -16,7 +16,7 @@ mutable struct Canvas
 end
 
 function Canvas(size::Array{Int64,1}, synced=false)
-    w = Scope()
+    w = Scope(imports=["/pkg/CanvasWebIO/helpers.js"])
     handler = Observable(w, "handler", ["id", 0, 0])
     selection = Observable(w, "selection", "id")
     getter = Dict()
@@ -26,7 +26,7 @@ function Canvas(size::Array{Int64,1}, synced=false)
     end
     on(handler) do val
         selection[] = val[1]
-        if val[1] in keys(getter) 
+        if val[1] in keys(getter)
             getter[val[1]][] = Int.(floor.(val[2:3]))
         else
             println("Failed to assign value $(val[2:3]) to $(val[1])")
@@ -54,46 +54,6 @@ function (canvas::Canvas)()
     # and xpos,ypos the new position of the object
     #
     # Transform parser from https://stackoverflow.com/a/17838403
-    @async (sleep(1.0); evaljs(canvas.w, js""" setp = function(event, name){
-        var selected_obj = document.getElementById(name)
-        var draggable = (selected_obj.getAttribute("draggable")=="true")
-        if(draggable){
-            var dim = selected_obj.parentElement.getBoundingClientRect();
-            var x = event.pageX-dim.x;
-            var y = event.pageY-dim.y;
-            var xpos, ypos;
-            if(selected_obj.tagName=="g"){
-                xpos = x;
-                ypos = y;
-                var trfm = parse(selected_obj.getAttribute("transform"));
-                if(selected_obj.getAttribute("data-lock")!="x"){
-                    trfm["translate"][0] = xpos;
-                }
-                else{
-                    xpos = trfm["translate"][0];
-                }
-                if(selected_obj.getAttribute("data-lock")!="y"){
-                    trfm["translate"][1] = ypos;
-                }
-                else{
-                    ypos = trfm["translate"][1];
-                }
-                selected_obj.setAttribute("transform", mk(trfm));
-            }
-        }
-        return [draggable, xpos, ypos]};
-        parse = function (a){
-            var b={};
-            for (var i in a = a.match(/(\w+\((\-?\d+\.?\d*e?\-?\d*,?)+\))+/g)){
-                var c = a[i].match(/[\w\.\-]+/g);
-                b[c.shift()] = c;
-            }
-            return b;
-        }
-        mk = function (a){
-            return (Object.keys(a).map(n => n + "("+ a[n].join(",") + ")")).join(" ");
-        }
-            """))
 
     canvas_events = Dict()
 
@@ -282,49 +242,12 @@ setindex_(canvas::Canvas, pos, i::String)
 Sets the position of the object i to pos on the javascript side.
 """
 function setindex_(canvas::Canvas, pos, i::String)
-    evaljs(canvas.w, js"""
-           (function (){
-               selected_obj = document.getElementById($i)
-               var x = $(pos[1])
-               var y = $(pos[2])
-               var xpos, ypos
-               if(selected_obj.tagName=="rect"){
-                   xpos = x-selected_obj.getAttribute("width")/2
-                   ypos = y-selected_obj.getAttribute("height")/2
-                   selected_obj.setAttribute("x", xpos)
-                   selected_obj.setAttribute("y", ypos)
-               }
-               if(selected_obj.tagName=="circle"){
-                   xpos = x
-                   ypos = y
-                   selected_obj.setAttribute("cx", xpos)
-                   selected_obj.setAttribute("cy", ypos)
-
-               }
-               if(selected_obj.tagName=="g"){
-                   xpos = x
-                   ypos = y
-                   var trfm = parse(selected_obj.getAttribute("transform"))
-                   if(selected_obj.getAttribute("data-lock")!="x"){
-                       trfm["translate"][0] = xpos
-                   }
-                   else{
-                       xpos = trfm["translate"][0]
-                   }
-                   if(selected_obj.getAttribute("data-lock")!="y"){
-                       trfm["translate"][1] = ypos
-                   }
-                   else{
-                       ypos = trfm["translate"][1]
-                   }
-                   selected_obj.setAttribute("transform", mk(trfm))
-                   }
-               })()"""
-              )
+    evaljs(canvas.w, js""" setp_nonevent($pos, $i)""")
 end
 
 function Base.setindex!(canvas::Canvas, val, i::String)
     setindex_(canvas::Canvas, val, i)
     canvas[i][] = val
 end
+
 end

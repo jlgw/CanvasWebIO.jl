@@ -206,7 +206,7 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node, lock=" ")
         else
             newattr["transform"] = "translate($(attr["cx"]),$(attr["cy"]))" #undefined object
         end
-        addmovable!(canvas, dom"svg:g"(svg, attributes=newattr))
+        addmovable!(canvas, dom"svg:g"(svg, attributes=newattr), lock)
         return
     end
     if :style in keys(svg.props)

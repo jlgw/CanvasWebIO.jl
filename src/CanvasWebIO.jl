@@ -26,7 +26,7 @@ function Canvas(size::Array{Int64,1}, synced=false)
     end
     on(handler) do val
         selection[] = val[1]
-        if val[1] in keys(getter)
+        if val[1] in keys(getter) 
             getter[val[1]][] = Int.(floor.(val[2:3]))
         else
             println("Failed to assign value $(val[2:3]) to $(val[1])")
@@ -54,32 +54,31 @@ function (canvas::Canvas)()
     # and xpos,ypos the new position of the object
     #
     # Transform parser from https://stackoverflow.com/a/17838403
-    # clean this up
     @async (sleep(1.0); evaljs(canvas.w, js""" setp = function(event, name){
         var selected_obj = document.getElementById(name)
         var draggable = (selected_obj.getAttribute("draggable")=="true")
         if(draggable){
-            var dim = selected_obj.parentElement.getBoundingClientRect()
-            var x = event.pageX-dim.x
-            var y = event.pageY-dim.y
-            var xpos, ypos
+            var dim = selected_obj.parentElement.getBoundingClientRect();
+            var x = event.pageX-dim.x;
+            var y = event.pageY-dim.y;
+            var xpos, ypos;
             if(selected_obj.tagName=="g"){
-                xpos = x
-                ypos = y
-                var trfm = parse(selected_obj.getAttribute("transform"))
+                xpos = x;
+                ypos = y;
+                var trfm = parse(selected_obj.getAttribute("transform"));
                 if(selected_obj.getAttribute("data-lock")!="x"){
-                    trfm["translate"][0] = xpos
+                    trfm["translate"][0] = xpos;
                 }
                 else{
-                    xpos = trfm["translate"][0]
+                    xpos = trfm["translate"][0];
                 }
                 if(selected_obj.getAttribute("data-lock")!="y"){
-                    trfm["translate"][1] = ypos
+                    trfm["translate"][1] = ypos;
                 }
                 else{
-                    ypos = trfm["translate"][1]
+                    ypos = trfm["translate"][1];
                 }
-                selected_obj.setAttribute("transform", mk(trfm))
+                selected_obj.setAttribute("transform", mk(trfm));
             }
         }
         return [draggable, xpos, ypos]};
@@ -92,7 +91,7 @@ function (canvas::Canvas)()
             return b;
         }
         mk = function (a){
-            return (Object.keys(a).map(n => n + "("+ a[n].join(",") + ")")).join(" ")
+            return (Object.keys(a).map(n => n + "("+ a[n].join(",") + ")")).join(" ");
         }
             """))
 
@@ -126,7 +125,7 @@ function (canvas::Canvas)()
         if name!=""
             pos = setp(event, name)
             if document.getElementById($(canvas.id)).getAttribute("is-dragged")=="true"
-                $handler[] = [name, pos[1], pos[2]]
+                $handler[] = [name, parseFloat(pos[1]), parseFloat(pos[2])]
                 document.getElementById(name).style.stroke = "none"
                 document.getElementById($(canvas.id)).setAttribute("data-selected", "")
                 document.getElementById($(canvas.id)).setAttribute("is-dragged", false)

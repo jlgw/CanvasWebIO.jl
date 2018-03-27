@@ -4,7 +4,7 @@ Warning: This package is experimental and buggy.
 
 
 <img src="demo.gif" style="width: 500px;"/>
-The purpose of this package is to allow the construction of movable SVG objects inside a WebIO Scope, with the objects having their positions accesssible through observables in Julia. 
+The purpose of this package is to allow the construction of clickable and movable SVG objects inside a WebIO Scope, with position of each object accesssible through observables in Julia.
 
 ## Installation
 Install [WebIO](https://github.com/JuliaGizmos/WebIO.jl) and [JSExpr](https://github.com/JuliaGizmos/JSExpr.jl). Then run

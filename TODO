@@ -5,3 +5,13 @@
 - It should work in Blink, but it doesn't. The event.page variables seem to be undefined in electron(?)
 
 - It would be nice to have a position (coordinate) label when moving an object.
+
+- styling/destyling for click/drag as mutable js functions
+
+- evaljs for setp etc => onload
+
+- Drag property => data-movable
+
+- Containers for static/clickables
+
+- Intuitive click position observable

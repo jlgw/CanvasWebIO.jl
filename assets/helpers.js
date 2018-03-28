@@ -25,7 +25,9 @@ setp = function(event, name){
             selected_obj.setAttribute("transform", mk(trfm));
         }
     }
-    return [draggable, xpos, ypos]};
+    return [draggable, xpos, ypos];
+}
+
 parse = function (a){
     var b={};
     for (var i in a = a.match(/(\w+\((\-?\d+\.?\d*e?\-?\d*,?)+\))+/g)){

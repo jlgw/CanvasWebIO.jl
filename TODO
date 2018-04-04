@@ -8,8 +8,6 @@
 
 - styling/destyling for click/drag as mutable js functions
 
-- evaljs for setp etc => onload
-
 - Drag property => data-movable
 
 - Containers for static/clickables

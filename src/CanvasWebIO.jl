@@ -165,8 +165,7 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node, lock=" ")
         else
             newattr["transform"] = "translate($(attr["cx"]),$(attr["cy"]))" #undefined object
         end
-        addmovable!(canvas, dom"svg:g"(svg, attributes=newattr), lock)
-        return
+        return addmovable!(canvas, dom"svg:g"(svg, attributes=newattr), lock)
     end
     if :style in keys(svg.props)
         style = svg.props[:style]
@@ -223,8 +222,9 @@ function addmovable!(canvas::Canvas, svg::WebIO.Node, lock=" ")
             document.getElementById($(canvas.id)).setAttribute("is-dragged", false)
         end
     end
-    push!(canvas.objects,
-          Node(svg.instanceof, children..., attributes=attr, style=style, events=movable_events))
+    node = Node(svg.instanceof, children..., attributes=attr, style=style, events=movable_events)
+    push!(canvas.objects, node)
+    node
 end
 
 """
